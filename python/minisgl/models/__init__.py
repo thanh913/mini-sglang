@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from .base import BaseLLMModel
-from .config import ModelConfig, RotaryConfig
+from .config import MoEConfig, ModelConfig, RotaryConfig
 from .weight import load_hf_weight
 
 
@@ -11,7 +11,17 @@ def create_model(model_path: str, model_config: ModelConfig) -> BaseLLMModel:
         from .llama import LlamaForCausalLM
 
         return LlamaForCausalLM(model_config)
+    elif "qwen3-moe" in model_name or "qwen3_moe" in model_name:
+        # MoE variant must be checked before standard Qwen3
+        from .qwen3_moe import Qwen3MoEForCausalLM
+
+        return Qwen3MoEForCausalLM(model_config)
     elif "qwen3" in model_name:
+        # Check if MoE config is present even without explicit MoE in name
+        if model_config.moe_config is not None:
+            from .qwen3_moe import Qwen3MoEForCausalLM
+
+            return Qwen3MoEForCausalLM(model_config)
         from .qwen3 import Qwen3ForCausalLM
 
         return Qwen3ForCausalLM(model_config)
@@ -19,4 +29,11 @@ def create_model(model_path: str, model_config: ModelConfig) -> BaseLLMModel:
         raise ValueError(f"Unsupported model: {model_path}")
 
 
-__all__ = ["BaseLLMModel", "load_hf_weight", "create_model", "ModelConfig", "RotaryConfig"]
+__all__ = [
+    "BaseLLMModel",
+    "load_hf_weight",
+    "create_model",
+    "ModelConfig",
+    "MoEConfig",
+    "RotaryConfig",
+]
